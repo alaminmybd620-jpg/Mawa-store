@@ -1,0 +1,150 @@
+{
+  "entities": {
+    "Sale": {
+      "title": "Sale",
+      "description": "Records tea shop sale transactions including quick tea sales and custom items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 30 },
+        "timestamp": { "type": "number" },
+        "itemName": { "type": "string", "maxLength": 100 },
+        "itemType": { "type": "string", "maxLength": 50 },
+        "quantity": { "type": "number" },
+        "unitPrice": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "paymentMethod": { "type": "string", "maxLength": 30 },
+        "customerName": { "type": "string", "maxLength": 100 },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "userId", "date", "itemName", "quantity", "unitPrice", "totalAmount"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Daily operating expenses and inventory purchase transactions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 30 },
+        "timestamp": { "type": "number" },
+        "category": { "type": "string", "maxLength": 50 },
+        "categoryLabel": { "type": "string", "maxLength": 100 },
+        "amount": { "type": "number" },
+        "isInventoryPurchase": { "type": "boolean" },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "userId", "date", "category", "amount"]
+    },
+    "CustomerCredit": {
+      "title": "CustomerCredit",
+      "description": "Customer credit (বাকি) accounts and balances",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "totalDue": { "type": "number" },
+        "totalPaid": { "type": "number" },
+        "currentBalance": { "type": "number" },
+        "lastUpdated": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "userId", "customerName", "totalDue", "totalPaid", "currentBalance"]
+    },
+    "CreditTransaction": {
+      "title": "CreditTransaction",
+      "description": "Credit entries and repayment receipts for customers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "customerId": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 100 },
+        "date": { "type": "string", "maxLength": 30 },
+        "type": { "type": "string", "enum": ["credit_taken", "payment_received"] },
+        "amount": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "userId", "customerId", "customerName", "date", "type", "amount"]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Stock tracking for tea leaves, milk, sugar, cups, cigarettes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "itemName": { "type": "string", "maxLength": 100 },
+        "key": { "type": "string", "maxLength": 50 },
+        "unit": { "type": "string", "maxLength": 30 },
+        "currentStock": { "type": "number" },
+        "minAlertStock": { "type": "number" },
+        "unitCost": { "type": "number" },
+        "lastRestocked": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "userId", "itemName", "unit", "currentStock"]
+    },
+    "CashEntry": {
+      "title": "CashEntry",
+      "description": "Cash register balance and cash in/out entries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 30 },
+        "type": { "type": "string", "enum": ["opening_balance", "cash_in", "cash_out"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["id", "userId", "date", "type", "amount"]
+    },
+    "ShopSettings": {
+      "title": "ShopSettings",
+      "description": "User customized shop configuration, product prices, and custom categories",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "shopName": { "type": "string", "maxLength": 100 },
+        "ownerName": { "type": "string", "maxLength": 100 },
+        "milkTeaPrice": { "type": "number" },
+        "blackTeaPrice": { "type": "number" },
+        "customItems": { "type": "string", "maxLength": 5000 }
+      },
+      "required": ["id", "userId", "shopName", "milkTeaPrice", "blackTeaPrice"]
+    }
+  },
+  "firestore": {
+    "/sales/{saleId}": {
+      "schema": { "$ref": "#/entities/Sale" },
+      "description": "Collection of tea shop sales"
+    },
+    "/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Collection of expenses and stock purchases"
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/CustomerCredit" },
+      "description": "Collection of customers with credit accounts"
+    },
+    "/credit_transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/CreditTransaction" },
+      "description": "Collection of credit logs and payment receipts"
+    },
+    "/inventory/{inventoryId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Collection of raw material and cigarette stock records"
+    },
+    "/cash_entries/{cashId}": {
+      "schema": { "$ref": "#/entities/CashEntry" },
+      "description": "Cash register movements and opening balance"
+    },
+    "/shop_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ShopSettings" },
+      "description": "User specific shop settings and configurations"
+    }
+  }
+}

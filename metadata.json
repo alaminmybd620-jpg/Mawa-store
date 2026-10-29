@@ -1,0 +1,6 @@
+{
+  "name": "চা দোকান হিসাব খাতা - Tea Shop Accounts",
+  "description": "বাংলাদেশের ছোট চা দোকানের জন্য সম্পূর্ণ মোবাইল-বান্ধব হিসাব খাতা ও লাভ-লোকসান ট্র্যাকার।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

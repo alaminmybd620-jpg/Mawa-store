@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity validation helpers
+    function isValidSale(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'itemName', 'quantity', 'unitPrice', 'totalAmount']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.date is string && data.date.size() <= 30 &&
+             data.itemName is string && data.itemName.size() <= 100 &&
+             data.quantity is number && data.quantity >= 0 &&
+             data.unitPrice is number && data.unitPrice >= 0 &&
+             data.totalAmount is number && data.totalAmount >= 0;
+    }
+
+    function isValidExpense(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'category', 'amount']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.date is string && data.date.size() <= 30 &&
+             data.category is string && data.category.size() <= 50 &&
+             data.amount is number && data.amount >= 0;
+    }
+
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['id', 'userId', 'customerName', 'totalDue', 'totalPaid', 'currentBalance']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.customerName is string && data.customerName.size() <= 100 &&
+             data.totalDue is number &&
+             data.totalPaid is number &&
+             data.currentBalance is number;
+    }
+
+    function isValidCreditTransaction(data) {
+      return data.keys().hasAll(['id', 'userId', 'customerId', 'customerName', 'date', 'type', 'amount']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.customerId is string && data.customerId.size() <= 128 &&
+             data.customerName is string && data.customerName.size() <= 100 &&
+             data.date is string && data.date.size() <= 30 &&
+             (data.type == 'credit_taken' || data.type == 'payment_received') &&
+             data.amount is number && data.amount >= 0;
+    }
+
+    function isValidInventory(data) {
+      return data.keys().hasAll(['id', 'userId', 'itemName', 'unit', 'currentStock']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.itemName is string && data.itemName.size() <= 100 &&
+             data.unit is string && data.unit.size() <= 30 &&
+             data.currentStock is number;
+    }
+
+    function isValidCashEntry(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'type', 'amount']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.date is string && data.date.size() <= 30 &&
+             (data.type == 'opening_balance' || data.type == 'cash_in' || data.type == 'cash_out') &&
+             data.amount is number;
+    }
+
+    function isValidShopSettings(data) {
+      return data.keys().hasAll(['id', 'userId', 'shopName', 'milkTeaPrice', 'blackTeaPrice']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.shopName is string && data.shopName.size() <= 100 &&
+             data.milkTeaPrice is number && data.milkTeaPrice >= 0 &&
+             data.blackTeaPrice is number && data.blackTeaPrice >= 0;
+    }
+
+    // Rules for Sales
+    match /sales/{saleId} {
+      allow create: if isSignedIn() && isValidId(saleId) && isValidSale(incoming()) && incoming().userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(saleId) && isValidSale(incoming()) && incoming().userId == request.auth.uid && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(saleId) && existing().userId == request.auth.uid;
+    }
+
+    // Rules for Expenses
+    match /expenses/{expenseId} {
+      allow create: if isSignedIn() && isValidId(expenseId) && isValidExpense(incoming()) && incoming().userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(expenseId) && isValidExpense(incoming()) && incoming().userId == request.auth.uid && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(expenseId) && existing().userId == request.auth.uid;
+    }
+
+    // Rules for Customers (বাকি খাতা)
+    match /customers/{customerId} {
+      allow create: if isSignedIn() && isValidId(customerId) && isValidCustomer(incoming()) && incoming().userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(customerId) && isValidCustomer(incoming()) && incoming().userId == request.auth.uid && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(customerId) && existing().userId == request.auth.uid;
+    }
+
+    // Rules for Credit Transactions
+    match /credit_transactions/{transId} {
+      allow create: if isSignedIn() && isValidId(transId) && isValidCreditTransaction(incoming()) && incoming().userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(transId) && isValidCreditTransaction(incoming()) && incoming().userId == request.auth.uid && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(transId) && existing().userId == request.auth.uid;
+    }
+
+    // Rules for Inventory Items (মজুদ)
+    match /inventory/{invId} {
+      allow create: if isSignedIn() && isValidId(invId) && isValidInventory(incoming()) && incoming().userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(invId) && isValidInventory(incoming()) && incoming().userId == request.auth.uid && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(invId) && existing().userId == request.auth.uid;
+    }
+
+    // Rules for Cash Entries (ক্যাশ রেজিস্টার)
+    match /cash_entries/{cashId} {
+      allow create: if isSignedIn() && isValidId(cashId) && isValidCashEntry(incoming()) && incoming().userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(cashId) && isValidCashEntry(incoming()) && incoming().userId == request.auth.uid && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(cashId) && existing().userId == request.auth.uid;
+    }
+
+    // Rules for Shop Settings
+    match /shop_settings/{settingId} {
+      allow create: if isSignedIn() && isValidId(settingId) && isValidShopSettings(incoming()) && incoming().userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(settingId) && isValidShopSettings(incoming()) && incoming().userId == request.auth.uid && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && isValidId(settingId) && existing().userId == request.auth.uid;
+    }
+  }
+}
